@@ -11,6 +11,7 @@ app.get("/chat", (req, res) => {
     res.send("Use POST request");
 });
 
+
 const API_KEY = "AIzaSyDoOAHtv3b9ZpTpqY3LtNPbbdX_A5kEY1g";
 
 app.post("/chat", async (req, res) => {
