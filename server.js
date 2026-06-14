@@ -4,7 +4,7 @@ const app = express();
 
 app.use(express.json());
 
-const API_KEY = process.env.GEMINI_API_KEY;
+const API_KEY = AIzaSyDoOAHtv3b9ZpTpqY3LtNPbbdX_A5kEY1g;
 
 app.post("/chat", async (req, res) => {
 
