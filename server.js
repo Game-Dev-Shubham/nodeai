@@ -4,7 +4,8 @@ const app = express();
 
 app.use(express.json());
 
-const API_KEY = AIzaSyDoOAHtv3b9ZpTpqY3LtNPbbdX_A5kEY1g;
+// Testing only
+const API_KEY = "YOUR_GEMINI_API_KEY";
 
 app.post("/chat", async (req, res) => {
 
@@ -13,11 +14,12 @@ app.post("/chat", async (req, res) => {
         const message = req.body.message;
 
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
             {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "X-goog-api-key": API_KEY
                 },
                 body: JSON.stringify({
                     contents: [
@@ -39,10 +41,10 @@ app.post("/chat", async (req, res) => {
 
         if (
             data.candidates &&
-            data.candidates.length > 0 &&
+            data.candidates[0] &&
             data.candidates[0].content &&
             data.candidates[0].content.parts &&
-            data.candidates[0].content.parts.length > 0
+            data.candidates[0].content.parts[0]
         ) {
             reply =
                 data.candidates[0]
@@ -70,7 +72,9 @@ const PORT =
     process.env.PORT || 3000;
 
 app.listen(PORT, () => {
+
     console.log(
         "Server running on port " + PORT
     );
+
 });
