@@ -1,69 +1,68 @@
-const express = require("express");
+const http = require("http");
+const url = require("url");
 
-const app = express();
-app.use(express.json());
+var users = [];
+var messages = [];
 
-app.get("/", (req, res) => {
-    res.send("Server Working");
-});
+function sendJson(res, obj) {
+    res.writeHead(200, {
+        "Content-Type": "application/json"
+    });
+    res.end(JSON.stringify(obj));
+}
 
-app.get("/chat", (req, res) => {
-    res.send("Use POST request");
-});
+const server = http.createServer(function(req, res) {
 
+    var parsed = url.parse(req.url, true);
+    var path = parsed.pathname;
 
-const API_KEY = "AIzaSyDoOAHtv3b9ZpTpqY3LtNPbbdX_A5kEY1g";
+    if (path === "/join") {
 
-app.post("/chat", async (req, res) => {
+        var name = parsed.query.name;
 
-    try {
+        if (name) {
 
-        const response = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-goog-api-key": API_KEY
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: req.body.message
-                        }]
-                    }]
-                })
+            if (users.indexOf(name) === -1) {
+
+                users.push(name);
+
+                messages.push({
+                    sender: "SERVER",
+                    text: name + " joined chat"
+                });
             }
-        );
-
-        const data = await response.json();
-
-        let reply = "No response";
-
-        if (
-            data.candidates &&
-            data.candidates[0] &&
-            data.candidates[0].content &&
-            data.candidates[0].content.parts
-        ) {
-            reply =
-                data.candidates[0]
-                    .content.parts[0]
-                    .text;
         }
 
-        res.json({
-            reply: reply
-        });
-
-    } catch (e) {
-
-        res.status(500).json({
-            error: e.toString()
-        });
-
+        res.end("OK");
+        return;
     }
 
+    if (path === "/send") {
+
+        var name = parsed.query.name;
+        var text = parsed.query.text;
+
+        if (name && text) {
+
+            messages.push({
+                sender: name,
+                text: text
+            });
+        }
+
+        res.end("SENT");
+        return;
+    }
+
+    if (path === "/messages") {
+
+        sendJson(res, messages);
+        return;
+    }
+
+    res.end("Chat Server Running");
 });
 
-app.listen(process.env.PORT || 3000);
+server.listen(3000, function() {
+    console.log("Server running on port 3000");
+});
