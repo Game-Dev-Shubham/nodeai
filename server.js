@@ -5,78 +5,85 @@ const PORT = 3000;
 
 var messages = [];
 
-function sendJson(res, obj) {
-    res.writeHead(200, {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-    });
-    res.end(JSON.stringify(obj));
-}
+http.createServer(function(req, res) {
 
-const server = http.createServer(function(req, res) {
-
-    const parsed = url.parse(req.url, true);
+    var parsed = url.parse(req.url, true);
 
     if (parsed.pathname === "/join") {
 
-        const name = parsed.query.name;
+        var name = parsed.query.name;
 
-        sendJson(res, {
-            success: true,
-            message: "Connection Established"
+        console.log(name + " joined");
+
+        res.writeHead(200, {
+            "Content-Type": "text/plain"
         });
 
-    } else if (parsed.pathname === "/send") {
+        res.end("Connection Established");
 
-        const name = parsed.query.name;
-        const text = parsed.query.message;
+    }
 
-        if (name && text) {
+    else if (parsed.pathname === "/send") {
+
+        var name = parsed.query.name;
+        var message = parsed.query.message;
+
+        if (name != null && message != null) {
 
             messages.push({
                 sender: name,
-                message: text,
-                time: Date.now()
+                message: message,
+                time: SystemTime()
             });
 
-            sendJson(res, {
-                success: true
-            });
-
-        } else {
-
-            sendJson(res, {
-                success: false
-            });
-
+            console.log(name + ": " + message);
         }
 
-    } else if (parsed.pathname === "/messages") {
+        res.writeHead(200, {
+            "Content-Type": "text/plain"
+        });
 
-        const after = parseInt(parsed.query.after || "0");
+        res.end("OK");
 
-        var result = [];
+    }
+
+    else if (parsed.pathname === "/messages") {
+
+        var after = parseInt(parsed.query.after || "0");
+
+        var output = "";
 
         for (var i = 0; i < messages.length; i++) {
 
             if (messages[i].time > after) {
-                result.push(messages[i]);
-            }
 
+                output +=
+                    messages[i].sender + "|" +
+                    messages[i].message + "|" +
+                    messages[i].time +
+                    "\n";
+            }
         }
 
-        sendJson(res, result);
-
-    } else {
-
-        sendJson(res, {
-            error: "Not Found"
+        res.writeHead(200, {
+            "Content-Type": "text/plain"
         });
 
+        res.end(output);
     }
 
+    else {
+
+        res.writeHead(404);
+        res.end("Not Found");
+    }
+
+}).listen(PORT, function() {
+
+    console.log("Chat Server Running On Port " + PORT);
+
 });
 
-server.listen(PORT, function() {
-    console.log("Chat Server Running On Port " + PORT);
-});
+function SystemTime() {
+    return new Date().getTime();
+}
