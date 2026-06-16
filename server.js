@@ -52,28 +52,28 @@ res.setHeader("Access-Control-Allow-Headers", "*");
 
     else if (parsed.pathname === "/messages") {
 
-        var after = parseInt(parsed.query.after || "0");
+    var after = parseInt(parsed.query.after || "0");
 
-        var output = "";
+    var output = [];  // array banao
 
-        for (var i = 0; i < messages.length; i++) {
-
-            if (messages[i].time > after) {
-
-                output +=
-                    messages[i].sender + "|" +
-                    messages[i].message + "|" +
-                    messages[i].time +
-                    "\n";
-            }
+    for (var i = 0; i < messages.length; i++) {
+        if (messages[i].time > after) {
+            output.push({
+                sender: messages[i].sender,
+                message: messages[i].message,
+                time: messages[i].time
+            });
         }
-
-        res.writeHead(200, {
-            "Content-Type": "text/plain"
-        });
-
-        res.end(output);
     }
+
+    res.writeHead(200, {
+        "Content-Type": "application/json"  // JSON content type
+    });
+
+    res.end(JSON.stringify(output));  // JSON string bhejo
+}
+
+        
 
     else {
 
