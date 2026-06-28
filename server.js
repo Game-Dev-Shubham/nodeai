@@ -1,95 +1,55 @@
-const http = require("http");
+const WebSocket = require("ws");
 
-let gyro = {
-    x: 0,
-    y: 0,
-    z: 0
-};
+const port = process.env.PORT || 10000;
 
-const server = http.createServer((req, res) => {
+const wss = new WebSocket.Server({ port });
 
-    // Home Route
-    if (req.method === "GET" && req.url === "/") {
+let sender = null;
 
-        res.writeHead(200, {
-            "Content-Type": "text/plain"
-        });
+wss.on("connection", (ws) => {
 
-        res.end("Node.js Gyroscope Server Running");
+    ws.on("message", (msg) => {
 
-    }
+        let data;
 
-    // Get Gyroscope Data
-    else if (req.method === "GET" && req.url === "/gyro") {
+        try {
+            data = JSON.parse(msg);
+        } catch {
+            return;
+        }
 
-        res.writeHead(200, {
-            "Content-Type": "application/json"
-        });
+        if (data.type === "sender") {
+            sender = ws;
+            return;
+        }
 
-        res.end(JSON.stringify(gyro));
+        if (data.type === "receiver") {
+            ws.isReceiver = true;
+            return;
+        }
 
-    }
+        if (data.type === "gyro") {
 
-    // Update Gyroscope Data
-    else if (req.method === "POST" && req.url === "/update") {
+            wss.clients.forEach(client => {
 
-        let body = "";
+                if (
+                    client.readyState === WebSocket.OPEN &&
+                    client.isReceiver
+                ) {
+                    client.send(JSON.stringify(data));
+                }
 
-        req.on("data", function(chunk) {
-            body += chunk;
-        });
+            });
 
-        req.on("end", function() {
+        }
 
-            try {
+    });
 
-                const data = JSON.parse(body);
-
-                gyro.x = data.x;
-                gyro.y = data.y;
-                gyro.z = data.z;
-
-                console.clear();
-                console.log("Current Gyroscope Data:");
-                console.log(gyro);
-
-                res.writeHead(200, {
-                    "Content-Type": "text/plain"
-                });
-
-                res.end("OK");
-
-            } catch (e) {
-
-                res.writeHead(400, {
-                    "Content-Type": "text/plain"
-                });
-
-                res.end("Invalid JSON");
-
-            }
-
-        });
-
-    }
-
-    // Unknown Route
-    else {
-
-        res.writeHead(404, {
-            "Content-Type": "text/plain"
-        });
-
-        res.end("404 Not Found");
-
-    }
+    ws.on("close", () => {
+        if (ws === sender)
+            sender = null;
+    });
 
 });
 
-const PORT = process.env.PORT || 3000;
-
-server.listen(PORT, function() {
-
-    console.log("Server Running on Port " + PORT);
-
-});
+console.log("Server Running...");
