@@ -8,46 +8,18 @@ let gyro = {
 
 const server = http.createServer((req, res) => {
 
-    if (req.method === "POST" && req.url === "/update") {
+    // Home Route
+    if (req.method === "GET" && req.url === "/") {
 
-        let body = "";
-
-        req.on("data", chunk => {
-            body += chunk;
+        res.writeHead(200, {
+            "Content-Type": "text/plain"
         });
 
-        req.on("end", () => {
-
-            try {
-
-                const data = JSON.parse(body);
-
-                gyro.x = data.x;
-                gyro.y = data.y;
-                gyro.z = data.z;
-
-                console.clear();
-
-                console.log("Gyroscope");
-
-                console.log(gyro);
-
-                res.writeHead(200);
-
-                res.end("OK");
-
-            } catch (e) {
-
-                res.writeHead(400);
-
-                res.end("Bad JSON");
-
-            }
-
-        });
+        res.end("Node.js Gyroscope Server Running");
 
     }
 
+    // Get Gyroscope Data
     else if (req.method === "GET" && req.url === "/gyro") {
 
         res.writeHead(200, {
@@ -58,18 +30,66 @@ const server = http.createServer((req, res) => {
 
     }
 
+    // Update Gyroscope Data
+    else if (req.method === "POST" && req.url === "/update") {
+
+        let body = "";
+
+        req.on("data", function(chunk) {
+            body += chunk;
+        });
+
+        req.on("end", function() {
+
+            try {
+
+                const data = JSON.parse(body);
+
+                gyro.x = data.x;
+                gyro.y = data.y;
+                gyro.z = data.z;
+
+                console.clear();
+                console.log("Current Gyroscope Data:");
+                console.log(gyro);
+
+                res.writeHead(200, {
+                    "Content-Type": "text/plain"
+                });
+
+                res.end("OK");
+
+            } catch (e) {
+
+                res.writeHead(400, {
+                    "Content-Type": "text/plain"
+                });
+
+                res.end("Invalid JSON");
+
+            }
+
+        });
+
+    }
+
+    // Unknown Route
     else {
 
-        res.writeHead(404);
+        res.writeHead(404, {
+            "Content-Type": "text/plain"
+        });
 
-        res.end();
+        res.end("404 Not Found");
 
     }
 
 });
 
-server.listen(3000, () => {
+const PORT = process.env.PORT || 3000;
 
-    console.log("Server Running");
+server.listen(PORT, function() {
+
+    console.log("Server Running on Port " + PORT);
 
 });
