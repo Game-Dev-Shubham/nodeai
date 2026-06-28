@@ -1,92 +1,75 @@
 const http = require("http");
-const url = require("url");
 
-const PORT = 3000;
+let gyro = {
+    x: 0,
+    y: 0,
+    z: 0
+};
 
-var messages = [];
+const server = http.createServer((req, res) => {
 
-http.createServer(function(req, res) {
-res.setHeader("Access-Control-Allow-Origin", "*");
-res.setHeader("Access-Control-Allow-Methods", "GET");
-res.setHeader("Access-Control-Allow-Headers", "*");
+    if (req.method === "POST" && req.url === "/update") {
 
-    var parsed = url.parse(req.url, true);
+        let body = "";
 
-    if (parsed.pathname === "/join") {
-
-        var name = parsed.query.name;
-
-        console.log(name + " joined");
-
-        res.writeHead(200, {
-            "Content-Type": "text/plain"
+        req.on("data", chunk => {
+            body += chunk;
         });
 
-        res.end("Connection Established");
+        req.on("end", () => {
 
-    }
+            try {
 
-    else if (parsed.pathname === "/send") {
+                const data = JSON.parse(body);
 
-        var name = parsed.query.name;
-        var message = parsed.query.message;
+                gyro.x = data.x;
+                gyro.y = data.y;
+                gyro.z = data.z;
 
-        if (name != null && message != null) {
+                console.clear();
 
-            messages.push({
-                sender: name,
-                message: message,
-                time: SystemTime()
-            });
+                console.log("Gyroscope");
 
-            console.log(name + ": " + message);
-        }
+                console.log(gyro);
 
-        res.writeHead(200, {
-            "Content-Type": "text/plain"
+                res.writeHead(200);
+
+                res.end("OK");
+
+            } catch (e) {
+
+                res.writeHead(400);
+
+                res.end("Bad JSON");
+
+            }
+
         });
 
-        res.end("OK");
-
     }
 
-    else if (parsed.pathname === "/messages") {
+    else if (req.method === "GET" && req.url === "/gyro") {
 
-    var after = parseInt(parsed.query.after || "0");
+        res.writeHead(200, {
+            "Content-Type": "application/json"
+        });
 
-    var output = [];  // array banao
+        res.end(JSON.stringify(gyro));
 
-    for (var i = 0; i < messages.length; i++) {
-        if (messages[i].time > after) {
-            output.push({
-                sender: messages[i].sender,
-                message: messages[i].message,
-                time: messages[i].time
-            });
-        }
     }
-
-    res.writeHead(200, {
-        "Content-Type": "application/json"  // JSON content type
-    });
-
-    res.end(JSON.stringify(output));  // JSON string bhejo
-}
-
-        
 
     else {
 
         res.writeHead(404);
-        res.end("Not Found");
+
+        res.end();
+
     }
-
-}).listen(PORT, function() {
-
-    console.log("Chat Server Running On Port " + PORT);
 
 });
 
-function SystemTime() {
-    return new Date().getTime();
-}
+server.listen(3000, () => {
+
+    console.log("Server Running");
+
+});
